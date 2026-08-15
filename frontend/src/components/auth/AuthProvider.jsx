@@ -1,15 +1,37 @@
-import React from "react"
-import { Link } from "react-router-dom"
+import React, { createContext, useState, useContext } from "react"
+import jwt_decode from "jwt-decode"
 
-const Admin = () => {
+export const AuthContext = createContext({
+	user: null,
+	handleLogin: (token) => {},
+	handleLogout: () => {}
+})
+
+export const AuthProvider = ({ children }) => {
+	const [user, setUser] = useState(null)
+
+	const handleLogin = (token) => {
+		const decodedUser = jwt_decode(token)
+		localStorage.setItem("userId", decodedUser.sub)
+		localStorage.setItem("userRole", decodedUser.roles)
+		localStorage.setItem("token", token)
+		setUser(decodedUser)
+	}
+
+	const handleLogout = () => {
+		localStorage.removeItem("userId")
+		localStorage.removeItem("userRole")
+		localStorage.removeItem("token")
+		setUser(null)
+	}
+
 	return (
-		<section className="container mt-5">
-			<h2>Welcome to Adimin Panel</h2>
-			<hr />
-			<Link to={"/existing-rooms"}>Manage Rooms</Link> <br />
-			<Link to={"/existing-bookings"}>Manage Bookings</Link>
-		</section>
+		<AuthContext.Provider value={{ user, handleLogin, handleLogout }}>
+			{children}
+		</AuthContext.Provider>
 	)
 }
 
-export default Admin
+export const useAuth = () => {
+	return useContext(AuthContext)
+}
